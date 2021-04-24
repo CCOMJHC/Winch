@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod
+import os
 import socket
 from time import sleep
 from time import time
@@ -51,29 +52,58 @@ class InitState(State):
         :param winch: Context
         :return:
         """
-        # Initialize GPIO
-
+        ## Initialize GPIO
         GPIO.setmode(GPIO.BCM)
-        #
-        # # Create a dictionary called pins to store the pin number, name, and pin state:
+        
+        ## Name the pins for control and sensing.
         winch.slack_pin = 6
         winch.dock_pin = 17
+        winch.at_line_end_pin = 12
         winch.up_pin = 23
         winch.down_pin = 24
+        winch.rotations_pin = 21
         
-        ## Set each pin as an output and make it low:
+        ## Setup motor control
+        # Set each pin as an output and make it low:
         GPIO.setup(winch.up_pin, GPIO.OUT)
         GPIO.output(winch.up_pin, GPIO.LOW)
         GPIO.setup(winch.down_pin, GPIO.OUT)
         GPIO.output(winch.down_pin, GPIO.LOW)
             
-        # Slack sensor
+        ## Setup slack sensor
         GPIO.setup(winch.slack_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
         GPIO.add_event_detect(winch.slack_pin, GPIO.BOTH)
         
+        ## Setup Docked and End of Line Sensors:
+        # FIX: Need to add callbacks to these event_detect statements.
+        # so they are registered even when not operating winch. 
         GPIO.setup(winch.dock_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
         GPIO.add_event_detect(winch.dock_pin, GPIO.BOTH)
-        #
+        GPIO.setup(winch.at_end_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        GPIO.add_event_detect(winch.at_line_end_pin, GPIO.BOTH)
+        
+        ## Setup rotations Counter
+        GPIO.setup(winch.rotations_pin, GPIO.IN, pull_up_down = GPIO.PUD_UP)
+        GPIO.add_event_detect(winch.rotations_pin, GPIO.FALLING,
+                              callback = winch.gotWheelTurn,
+                              bouncetime = 100)
+        
+        ## Read counter calibration data
+        
+        with file(self.cal_file) as F:
+            
+            winch.cal_data['rotations'] = []
+            winch.cal_data['meters'] = []
+            while True:
+                try:
+                    rot, m = F.readline().split()
+                    winch.cal_data['rotations'].append(rot)
+                    winch.cal_data['meters'].append(m)
+                except:
+                    print("Finished reading cal data.")
+                    print("Read %d values." % len(winch.cal_data['rotations']))
+                    break
+        
         #
         #
          #winch.payout_rate = int(input("Payout rate: "))
@@ -83,6 +113,7 @@ class InitState(State):
         
         winch.queue_command({"from": "INIT", "to": "STDBY"})
         winch.execute_state_stack()
+        
 
     def on_exit_behavior(self, winch):
         pass

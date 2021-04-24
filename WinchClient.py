@@ -1,5 +1,7 @@
+#!/usr/bin/env python
+
 import socket
-import tkinter
+#import tkinter
 import threading
 from time import sleep
 
@@ -12,7 +14,7 @@ sock = socket.socket(socket.AF_INET,  # Internet
                      socket.SOCK_DGRAM)  # UDP
 
 while True:
-    cmd = input("Command: ")
+    cmd = raw_input("Command: ")
     for i in range(50):
         print("sending command:", cmd)
         sock.sendto(str.encode(cmd), (UDP_IP, UDP_PORT))
