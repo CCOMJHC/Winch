@@ -251,9 +251,9 @@ class Winch(Context):
         #if(self.rotation_timer.check_time()
         elapsed_time = self.rotation_timer.check_time()
         self.rotation_timer.reset()
-        if( elapsed_time > 0 and elapsed_time < 0.5 ):
-            self.rotation_timer.stop()
-            self.error("Drum rotating too fast")
+        #if( elapsed_time > 0 and elapsed_time < 0.5 ):
+        #    self.rotation_timer.stop()
+        #    self.error("Drum rotating too fast")
         if self.direction == "up":
             self.depth -= 1
         elif self.direction == "down":
